@@ -211,7 +211,7 @@ static bool client_init_cb(struct client *cl, char *buf, int len)
 	cl->state = client_parse_request(cl, buf);
 	ustream_consume(cl->us, newline + 2 - buf);
 	if (cl->state == CLIENT_STATE_DONE)
-		uh_header_error(cl, 400, "Bad Request");
+		uh_header_error(cl, 400, "Bad Request (client done)");
 
 	return true;
 }
@@ -339,7 +339,7 @@ static void client_parse_header(struct client *cl, char *data)
 	} else if (!strcmp(data, "content-length")) {
 		r->content_length = strtoul(val, &err, 0);
 		if (err && *err) {
-			uh_header_error(cl, 400, "Bad Request");
+			uh_header_error(cl, 400, "Bad Request (content-length)");
 			return;
 		}
 	} else if (!strcmp(data, "transfer-encoding")) {

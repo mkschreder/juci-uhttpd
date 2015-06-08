@@ -129,6 +129,7 @@ static struct path_info *
 uh_path_lookup(struct client *cl, const char *url)
 {
 	static char path_phys[PATH_MAX];
+	static char path_gz[PATH_MAX];
 	static char path_info[PATH_MAX];
 	static struct path_info p;
 
@@ -190,12 +191,16 @@ uh_path_lookup(struct client *cl, const char *url)
 		if (!exists)
 			continue;
 
-		/* test current path */
-		if (stat(path_phys, &p.stat))
-			continue;
-
-		snprintf(path_info, sizeof(path_info), "%s", uh_buf + i);
-		break;
+		snprintf(path_gz, sizeof(path_gz), "%s.gz", uh_buf + i); 
+		
+		/* test both ordinary path and gz path */
+		if (stat(path_phys, &p.stat) == 0){
+			snprintf(path_info, sizeof(path_info), "%s", uh_buf + i);
+			break; 
+		} else if(stat(path_gz, &p.stat) == 0) {
+			snprintf(path_info, sizeof(path_info), "%s", path_gz); 
+			break; 
+		}
 	}
 
 	/* check whether found path is within docroot */
@@ -575,7 +580,10 @@ static void uh_file_data(struct client *cl, struct path_info *pi, int fd)
 
 	/* write status */
 	uh_file_response_200(cl, &pi->stat);
-
+	
+	if(strncmp(pi->name+strlen(pi->name)-3, ".gz", 3) == 0)
+		ustream_printf(cl->us, "Content-Encoding: gzip\r\n"); 
+		
 	ustream_printf(cl->us, "Content-Type: %s\r\n",
 			   uh_file_mime_lookup(pi->name));
 

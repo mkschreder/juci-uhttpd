@@ -191,7 +191,7 @@ uh_path_lookup(struct client *cl, const char *url)
 		if (!exists)
 			continue;
 
-		snprintf(path_gz, sizeof(path_gz), "%s.gz", uh_buf + i); 
+		snprintf(path_gz, sizeof(path_gz), "%s.gz", path_phys); 
 		
 		/* test both ordinary path and gz path */
 		if (stat(path_phys, &p.stat) == 0){
@@ -199,6 +199,7 @@ uh_path_lookup(struct client *cl, const char *url)
 			snprintf(path_info, sizeof(path_info), "%s", uh_buf + i);
 			break; 
 		} else if(stat(path_gz, &p.stat) == 0) {
+			strcpy(path_phys, path_gz); 
 			printf("Found gzipped version of file %s\n", path_phys); 
 			snprintf(path_info, sizeof(path_info), "%s", path_gz); 
 			break; 
@@ -281,8 +282,10 @@ static const char * uh_file_mime_lookup(const char *path)
 		e = &path[strlen(path)-1];
 
 		while (e >= path) {
-			if ((*e == '.' || *e == '/') && (strncmp(e, ".gz", 3) == -1) && !strcasencmp(&e[1], m->extn))
+			if ((*e == '.' || *e == '/') && (strncmp(e, ".gz", 3) != 0) && !strncasecmp(&e[1], m->extn, strlen(m->extn))){
+				printf("File is of mime type: %s\n", m->mime); 
 				return m->mime;
+			}
 
 			e--;
 		}
@@ -616,14 +619,18 @@ static void uh_file_request(struct client *cl, const char *url,
 	struct http_request *req = &cl->request;
 	char *error_handler;
 
-	if (!(pi->stat.st_mode & S_IROTH))
+	if (!(pi->stat.st_mode & S_IROTH)){
+		printf("File mode not S_IROTH on %s\n", pi->phys); 
 		goto error;
+	}
 
 	if (pi->stat.st_mode & S_IFREG) {
 		fd = open(pi->phys, O_RDONLY);
-		if (fd < 0)
+		if (fd < 0){
+			printf("Could not open file %s\n", pi->phys); 
 			goto error;
-
+		}
+		
 		req->respond_chunked = false;
 		cl->dispatch.file.hdr = tb;
 		uh_file_data(cl, pi, fd);
@@ -632,9 +639,10 @@ static void uh_file_request(struct client *cl, const char *url,
 	}
 
 	if ((pi->stat.st_mode & S_IFDIR)) {
-		if (conf.no_dirlists)
+		if (conf.no_dirlists){
+			printf("Directory listings disabled, path: %s\n", pi->phys); 
 			goto error;
-
+		}
 		uh_file_dirlist(cl, pi);
 		return;
 	}

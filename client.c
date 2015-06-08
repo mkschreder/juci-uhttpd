@@ -301,7 +301,6 @@ static void client_header_complete(struct client *cl)
 	default:
 		break;
 	}
-
 	uh_handle_request(cl);
 }
 

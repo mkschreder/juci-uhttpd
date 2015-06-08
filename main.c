@@ -182,6 +182,7 @@ static void init_defaults_pre(void)
 static void init_defaults_post(void)
 {
 	uh_index_add("index.html");
+	uh_index_add("index.html.gz");
 	uh_index_add("index.htm");
 	uh_index_add("default.html");
 	uh_index_add("default.htm");

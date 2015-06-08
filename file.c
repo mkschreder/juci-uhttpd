@@ -195,9 +195,11 @@ uh_path_lookup(struct client *cl, const char *url)
 		
 		/* test both ordinary path and gz path */
 		if (stat(path_phys, &p.stat) == 0){
+			printf("Found ordinary version of file %s\n", path_phys); 
 			snprintf(path_info, sizeof(path_info), "%s", uh_buf + i);
 			break; 
 		} else if(stat(path_gz, &p.stat) == 0) {
+			printf("Found gzipped version of file %s\n", path_phys); 
 			snprintf(path_info, sizeof(path_info), "%s", path_gz); 
 			break; 
 		}
@@ -279,7 +281,7 @@ static const char * uh_file_mime_lookup(const char *path)
 		e = &path[strlen(path)-1];
 
 		while (e >= path) {
-			if ((*e == '.' || *e == '/') && !strcasecmp(&e[1], m->extn))
+			if ((*e == '.' || *e == '/') && strncmp(e, ".gz", 3) == -1 && && !strcasencmp(&e[1], m->extn))
 				return m->mime;
 
 			e--;

@@ -281,7 +281,7 @@ static const char * uh_file_mime_lookup(const char *path)
 		e = &path[strlen(path)-1];
 
 		while (e >= path) {
-			if ((*e == '.' || *e == '/') && strncmp(e, ".gz", 3) == -1 && && !strcasencmp(&e[1], m->extn))
+			if ((*e == '.' || *e == '/') && (strncmp(e, ".gz", 3) == -1) && !strcasencmp(&e[1], m->extn))
 				return m->mime;
 
 			e--;

@@ -28,16 +28,11 @@ static const struct mimetype uh_mime_types[] = {
 
 	{ "txt",     "text/plain" },
 	{ "log",     "text/plain" },
-	{ "js",      "text/javascript" },
 	{ "css",     "text/css" },
-	{ "htm",     "text/html" },
 	{ "html",    "text/html" },
+	{ "htm",     "text/html" },
 	{ "diff",    "text/x-patch" },
 	{ "patch",   "text/x-patch" },
-	{ "c",       "text/x-csrc" },
-	{ "h",       "text/x-chdr" },
-	{ "o",       "text/x-object" },
-	{ "ko",      "text/x-object" },
 
 	{ "bmp",     "image/bmp" },
 	{ "gif",     "image/gif" },
@@ -48,6 +43,7 @@ static const struct mimetype uh_mime_types[] = {
 
 	{ "json",    "application/json" },
 	{ "jsonp",   "application/javascript" },
+	{ "js",      "text/javascript" },
 	{ "zip",     "application/zip" },
 	{ "pdf",     "application/pdf" },
 	{ "xml",     "application/xml" },
@@ -86,6 +82,12 @@ static const struct mimetype uh_mime_types[] = {
 
 	{ "pac",		"application/x-ns-proxy-autoconfig" },
 	{ "wpad.dat",	"application/x-ns-proxy-autoconfig" },
+	
+	// put all shorter ones last so that we match the longer ones first!
+	{ "c",       "text/x-csrc" },
+	{ "h",       "text/x-chdr" },
+	{ "o",       "text/x-object" },
+	{ "ko",      "text/x-object" },
 
 	{ NULL, NULL }
 };

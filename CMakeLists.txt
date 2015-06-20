@@ -11,7 +11,7 @@ ADD_DEFINITIONS(-D_FILE_OFFSET_BITS=64 -Os -Wall -Werror -Wmissing-declarations 
 #OPTION(LUA_SUPPORT "Lua support" ON)
 OPTION(UBUS_SUPPORT "ubus support" ON)
 
-INCLUDE_DIRECTORIES(../ ../json-c-0.11 ../ubus)
+INCLUDE_DIRECTORIES(../ ../json-c ../ubus)
 LINK_DIRECTORIES(../lib)
 
 IF(APPLE)

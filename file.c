@@ -637,8 +637,7 @@ static void uh_file_request(struct client *cl, const char *url,
 			printf("Could not open file %s\n", pi->phys); 
 			goto error;
 		}
-		
-		req->respond_chunked = false;
+		req->disable_chunked = true;
 		cl->dispatch.file.hdr = tb;
 		uh_file_data(cl, pi, fd);
 		cl->dispatch.file.hdr = NULL;

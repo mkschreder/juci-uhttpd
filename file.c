@@ -277,11 +277,12 @@ static const char * uh_file_mime_lookup(const char *path)
 {
 	const struct mimetype *m = &uh_mime_types[0];
 	const char *e;
-	
-	if(!path || !strlen(path)) return 0; 
+	size_t pathlen = strlen(path); 
+
+	if(!path || !pathlen) return 0; 
 
 	while (m->extn) {
-		e = &path[strlen(path)-1];
+		e = &path[pathlen-1];
 
 		while (e >= path) {
 			if ((*e == '.' || *e == '/') && (strncmp(e, ".gz", 3) != 0) && !strncasecmp(&e[1], m->extn, strlen(m->extn))){
@@ -589,7 +590,8 @@ static void uh_file_data(struct client *cl, struct path_info *pi, int fd)
 	/* write status */
 	uh_file_response_200(cl, &pi->stat);
 	
-	if(strlen(pi->name) > 3 && strncmp(pi->name+strlen(pi->name)-3, ".gz", 3) == 0)
+	size_t extlen = strlen(pi->name); 
+	if(extlen > 3 && strncmp(pi->name+extlen-3, ".gz", 3) == 0)
 		ustream_printf(cl->us, "Content-Encoding: gzip\r\n"); 
 	
 	const char *mime_type = uh_file_mime_lookup(pi->name); 

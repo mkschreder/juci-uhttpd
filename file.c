@@ -278,7 +278,7 @@ static const char * uh_file_mime_lookup(const char *path)
 	const struct mimetype *m = &uh_mime_types[0];
 	const char *e;
 	
-	if(!path || !strlen(path)) return "application/unknown"; 
+	if(!path || !strlen(path)) return 0; 
 
 	while (m->extn) {
 		e = &path[strlen(path)-1];
@@ -295,7 +295,7 @@ static const char * uh_file_mime_lookup(const char *path)
 		m++;
 	}
 
-	return "application/octet-stream";
+	return 0;
 }
 
 static const char * uh_file_mktag(struct stat *s, char *buf, int len)
@@ -499,7 +499,8 @@ static void list_entries(struct client *cl, struct dirent **files, int count,
 		if (!dir) {
 			suffix = "";
 			mode = S_IROTH;
-			type = uh_file_mime_lookup(local_path);
+			type = uh_file_mime_lookup(local_path); 
+			if(!type) type = "application/octet-stream";
 		}
 
 		if (!(s.st_mode & mode))
@@ -590,9 +591,11 @@ static void uh_file_data(struct client *cl, struct path_info *pi, int fd)
 	
 	if(strlen(pi->name) > 3 && strncmp(pi->name+strlen(pi->name)-3, ".gz", 3) == 0)
 		ustream_printf(cl->us, "Content-Encoding: gzip\r\n"); 
-		
-	ustream_printf(cl->us, "Content-Type: %s\r\n",
-			   uh_file_mime_lookup(pi->name));
+	
+	const char *mime_type = uh_file_mime_lookup(pi->name); 
+	if(mime_type){
+		ustream_printf(cl->us, "Content-Type: %s\r\n", mime_type);
+	}
 
 	ustream_printf(cl->us, "Content-Length: %" PRIu64 "\r\n\r\n",
 			   pi->stat.st_size);

@@ -277,6 +277,8 @@ static const char * uh_file_mime_lookup(const char *path)
 {
 	const struct mimetype *m = &uh_mime_types[0];
 	const char *e;
+	
+	if(!path || !strlen(path)) return "application/unknown"; 
 
 	while (m->extn) {
 		e = &path[strlen(path)-1];

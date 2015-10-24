@@ -586,7 +586,7 @@ static void uh_file_data(struct client *cl, struct path_info *pi, int fd)
 	/* write status */
 	uh_file_response_200(cl, &pi->stat);
 	
-	if(strncmp(pi->name+strlen(pi->name)-3, ".gz", 3) == 0)
+	if(strlen(pi->name) > 3 && strncmp(pi->name+strlen(pi->name)-3, ".gz", 3) == 0)
 		ustream_printf(cl->us, "Content-Encoding: gzip\r\n"); 
 		
 	ustream_printf(cl->us, "Content-Type: %s\r\n",

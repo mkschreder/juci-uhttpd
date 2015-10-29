@@ -279,7 +279,6 @@ static void uh_log_ubus_calls(struct client *cl, int ret){
 	json_obj = array_list_get_idx(params_al, 3);
 	if(json_object_is_type(json_obj, json_type_object) == TRUE){
 		char addr[56];
-		char addr_compl[128];
 		const char *address = NULL;
 		if(cl->peer_addr.family == AF_INET){
 			address = inet_ntop(AF_INET, &cl->peer_addr.in, addr, 56);

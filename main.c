@@ -233,8 +233,14 @@ int main(int argc, char **argv)
 	init_defaults_pre();
 	signal(SIGPIPE, SIG_IGN);
 
-	while ((ch = getopt(argc, argv, "afqSDRXC:K:E:I:p:s:h:c:l:L:d:r:m:n:N:x:y:i:t:k:T:A:u:U:")) != -1) {
+	while ((ch = getopt(argc, argv, "afqSDRXC:K:E:I:p:s:h:c:l:L:d:r:m:n:N:x:y:i:t:k:T:A:u:U:G:g:")) != -1) {
 		switch(ch) {
+		case 'G':
+			conf.log_ubus_status = optarg;
+			break;
+		case 'g':
+			conf.log_ubus_method = optarg;
+			break;
 #ifdef HAVE_TLS
 		case 'C':
 			tls_crt = optarg;

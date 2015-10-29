@@ -23,7 +23,7 @@
 #include <libubox/avl-cmp.h>
 #include <stdio.h>
 #include <poll.h>
-
+#include <arpa/inet.h>
 #include "uhttpd.h"
 #include "plugin.h"
 
@@ -226,6 +226,72 @@ uh_ubus_request_data_cb(struct ubus_request *req, int type, struct blob_attr *ms
 	blobmsg_add_field(&du->buf, BLOBMSG_TYPE_TABLE, "", blob_data(msg), blob_len(msg));
 }
 
+static void uh_log_ubus_calls(struct client *cl, int ret){
+	if(strcmp(_conf->log_ubus_status, "noarg") == 0 || strcmp(_conf->log_ubus_method, "noarg") == 0) return;
+	const char *status_list[] = {
+		[UBUS_STATUS_OK] = "ok",
+		[UBUS_STATUS_INVALID_COMMAND] = "invalid_command",
+		[UBUS_STATUS_INVALID_ARGUMENT] = "invalid_argument",
+		[UBUS_STATUS_METHOD_NOT_FOUND] = "method_not_found",
+		[UBUS_STATUS_NOT_FOUND]	= "object_not_found",
+		[UBUS_STATUS_NO_DATA] = "no_data",
+		[UBUS_STATUS_PERMISSION_DENIED] = "permission_denied",
+		[UBUS_STATUS_TIMEOUT] = "timeout",
+		[UBUS_STATUS_NOT_SUPPORTED] = "not_supported",
+		[UBUS_STATUS_UNKNOWN_ERROR] = "unknown_error",
+		[UBUS_STATUS_CONNECTION_FAILED] = "connection_failed"
+	};
+	if(status_list[ret] == NULL || 
+		!strstr(_conf->log_ubus_status, status_list[ret])) 
+		return;
+	struct json_object *json_obj = NULL;
+	if(json_object_object_get_ex(cl->dispatch.ubus.jsobj, "method", &json_obj) != TRUE) return; //no method found
+	if(!json_object_is_type(json_obj, json_type_string)) return; //wrong json format
+	const char *method = json_object_get_string(json_obj);
+	if(strcmp(method, "call")) return; //not a ubus call
+	struct json_object *params = NULL;
+	if(json_object_object_get_ex(cl->dispatch.ubus.jsobj, "params", &params) != TRUE) return; //no params found
+	if(!json_object_is_type(params, json_type_array)) return; //wrong json format
+	struct array_list *params_al = json_object_get_array(params);
+	if(array_list_length(params_al) < 3)return; //to few parrams
+	struct json_object *o = (json_object *) array_list_get_idx(params_al, 1);
+	struct json_object *f = (json_object *) array_list_get_idx(params_al, 2);
+	if(json_object_is_type(o, json_type_string) == FALSE || json_object_is_type(f, json_type_string) == FALSE) return; //wrong json format
+	const char *obj = json_object_get_string(o);
+	const char *func = json_object_get_string(f);
+	char buf[128];
+	snprintf(buf, 128, "%s.%s", obj, func);
+	char *local_conf = alloca(strlen(_conf->log_ubus_method));
+	strcpy(local_conf, _conf->log_ubus_method);
+	char *tmp;
+	while(true){//going through config options and returns if buf is not listed
+		tmp = strchr(local_conf, ',');
+		if(tmp == NULL){
+			if(strcmp(local_conf, buf) == 0) break;
+			else return;
+		}else{
+			if(strncmp(local_conf, buf, (local_conf - tmp)) == 0) break;
+		}
+		local_conf = tmp;
+	}
+	json_obj = array_list_get_idx(params_al, 3);
+	if(json_object_is_type(json_obj, json_type_object) == TRUE){
+		char addr[56];
+		char addr_compl[128];
+		const char *address = NULL;
+		if(cl->peer_addr.family == AF_INET){
+			address = inet_ntop(AF_INET, &cl->peer_addr.in, addr, 56);
+		}else if(cl->peer_addr.family == AF_INET6){
+			address = inet_ntop(AF_INET6, &cl->peer_addr.in6, addr, 56);
+		}
+		if(address == NULL) address = "error getting ip address";
+		snprintf(addr_compl, 128, "ip:%s port:%u", address, cl->peer_addr.port);
+		char log[140];
+		snprintf(log, 140, "logger -t 'uhttpd' '%s: %s %s'", buf, addr_compl, json_object_to_json_string(json_obj));
+		system(log);
+	}
+}
+
 static void
 uh_ubus_request_cb(struct ubus_request *req, int ret)
 {
@@ -236,6 +302,7 @@ uh_ubus_request_cb(struct ubus_request *req, int ret)
 	int rem;
 
 	uloop_timeout_cancel(&du->timeout);
+	uh_log_ubus_calls(cl, ret);
 	uh_ubus_init_response(cl);
 	r = blobmsg_open_array(&buf, "result");
 	blobmsg_add_u32(&buf, "", ret);
@@ -502,9 +569,7 @@ static bool uh_ubus_allowed(const char *sid, const char *obj, const char *fun)
 	blobmsg_add_string(&req, "ubus_rpc_session", sid);
 	blobmsg_add_string(&req, "object", obj);
 	blobmsg_add_string(&req, "function", fun);
-
 	ubus_invoke(ctx, id, "access", req.head, uh_ubus_allowed_cb, &allow, conf.script_timeout * 500);
-
 	return allow;
 }
 

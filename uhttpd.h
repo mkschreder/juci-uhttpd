@@ -64,6 +64,8 @@ struct config {
 	const char *lua_prefix;
 	const char *ubus_prefix;
 	const char *ubus_socket;
+	const char *log_ubus_status;
+	const char *log_ubus_method;
 	int no_symlinks;
 	int no_dirlists;
 	int network_timeout;

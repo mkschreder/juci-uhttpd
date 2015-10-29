@@ -178,6 +178,8 @@ static void init_defaults_pre(void)
 	conf.realm = "Protected Area";
 	conf.cgi_prefix = "/cgi-bin";
 	conf.cgi_path = "/sbin:/usr/sbin:/bin:/usr/bin";
+	conf.log_ubus_status = 0; 
+	conf.log_ubus_method = 0; 
 	INIT_LIST_HEAD(&conf.cgi_alias);
 }
 

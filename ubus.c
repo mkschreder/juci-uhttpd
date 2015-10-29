@@ -227,7 +227,6 @@ uh_ubus_request_data_cb(struct ubus_request *req, int type, struct blob_attr *ms
 }
 
 static void uh_log_ubus_calls(struct client *cl, int ret){
-	if(strcmp(_conf->log_ubus_status, "noarg") == 0 || strcmp(_conf->log_ubus_method, "noarg") == 0) return;
 	const char *status_list[] = {
 		[UBUS_STATUS_OK] = "ok",
 		[UBUS_STATUS_INVALID_COMMAND] = "invalid_command",
@@ -241,6 +240,9 @@ static void uh_log_ubus_calls(struct client *cl, int ret){
 		[UBUS_STATUS_UNKNOWN_ERROR] = "unknown_error",
 		[UBUS_STATUS_CONNECTION_FAILED] = "connection_failed"
 	};
+	// logging is enabled only if both ubus_method and ubus_status are set in command line parameters
+	if(!_conf->log_ubus_status || !_conf->log_ubus_method) return; 
+	// ignore invalid ubus return codes. 
 	if(status_list[ret] == NULL || 
 		!strstr(_conf->log_ubus_status, status_list[ret])) 
 		return;
@@ -263,7 +265,7 @@ static void uh_log_ubus_calls(struct client *cl, int ret){
 	snprintf(buf, 128, "%s.%s", obj, func);
 	char *local_conf = alloca(strlen(_conf->log_ubus_method));
 	strcpy(local_conf, _conf->log_ubus_method);
-	char *tmp;
+	char *tmp = 0;
 	while(true){//going through config options and returns if buf is not listed
 		tmp = strchr(local_conf, ',');
 		if(tmp == NULL){
@@ -281,13 +283,12 @@ static void uh_log_ubus_calls(struct client *cl, int ret){
 		const char *address = NULL;
 		if(cl->peer_addr.family == AF_INET){
 			address = inet_ntop(AF_INET, &cl->peer_addr.in, addr, 56);
-		}else if(cl->peer_addr.family == AF_INET6){
+		} else if(cl->peer_addr.family == AF_INET6){
 			address = inet_ntop(AF_INET6, &cl->peer_addr.in6, addr, 56);
 		}
-		if(address == NULL) address = "error getting ip address";
-		snprintf(addr_compl, 128, "ip:%s port:%u", address, cl->peer_addr.port);
-		char log[140];
-		snprintf(log, 140, "logger -t 'uhttpd' '%s: %s %s'", buf, addr_compl, json_object_to_json_string(json_obj));
+		if(address == NULL) address = "0.0.0.0";
+		char log[512];
+		snprintf(log, 512, "logger -t 'uhttpd' 'ACCESS %s method=%s ip=%s port=%u data=%s'", status_list[ret], buf, address, cl->peer_addr.port, json_object_to_json_string(json_obj));
 		system(log);
 	}
 }
